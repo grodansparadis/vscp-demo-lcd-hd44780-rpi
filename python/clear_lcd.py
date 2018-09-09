@@ -71,36 +71,8 @@ def lcd_toggle_enable(bits):
   bus.write_byte(I2C_ADDR,(bits & ~ENABLE))
   time.sleep(E_DELAY)
 
-def lcd_string(message,line):
-  # Send string to display
-
-  message = message.ljust(LCD_WIDTH," ")
-
-  lcd_byte(line, LCD_CMD)
-
-  for i in range(LCD_WIDTH):
-    lcd_byte(ord(message[i]),LCD_CHR)
-
 def main():
-
-  line_ram = LCD_LINE_1
-  line = int(sys.argv[2])
-
-  if line == 0:
-      line_ram = LCD_LINE_1
-  elif line == 1:
-      line_ram = LCD_LINE_2
-  elif line == 2:
-      line_ram = LCD_LINE_3
-  elif line == 3:
-      line_ram = LCD_LINE_4
-
-  # Initialise display
-#  lcd_init()
-  print(int(sys.argv[2]))
-
-  # Send some test
-  lcd_string( sys.argv[1], line_ram )
-
+  lcd_byte(0x01,LCD_CMD) # 000001 Clear display
+     
 main();
 
