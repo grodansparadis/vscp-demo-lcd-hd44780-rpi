@@ -1,9 +1,9 @@
-all: logger6675
+all: testlcd
 
-logger6675: logger6675.c
-	gcc  -Wall -o logger6675 logger6675.c max6675.c -lwiringPi
+testlcd: testlcd.c
+	gcc  -Wall -o testlcd testlcd.c i2clcd.c -lpigpio -lpthread
 
 clean:
-	rm logger6675
+	rm testlcd
 	rm *.o
 
