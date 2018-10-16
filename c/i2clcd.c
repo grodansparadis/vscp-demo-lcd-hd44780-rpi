@@ -1,16 +1,16 @@
 #include <unistd.h>
 #include <string.h>
+#include <stdint.h>
 #include "pigpio.h"
 
 #include "i2clcd.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-//
+// i2clcd_toggle_enable
 // 
 
 int i2clcd_toggle_enable( unsigned h, uint8_t byte )
 {
-    //  Toggle enable
     usleep( I2CLCD_E_DELAY );
     i2cWriteByte( h, ( byte | I2CLCD_ENABLE ) );
     usleep( I2CLCD_E_PULSE );
@@ -21,39 +21,53 @@ int i2clcd_toggle_enable( unsigned h, uint8_t byte )
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// i2clcd_write_byte
 //
 // Send byte to data pins
 //
 // b = the data
 // mode = 1 for data
 // 	  0 for command
-
+//
 
 int i2clcd_write_byte( unsigned h, uint8_t b, uint8_t mode )
 {
-    uint8_t byte_high = mode | ( b & 0xF0 ) | I2CLCD_BACKLIGHT_ON;
-    uint8_t byte_low = mode | ( ( b<<4 ) & 0xF0 ) | I2CLCD_BACKLIGHT_ON;
+    uint8_t buf[4];
 
+    uint8_t nibble_high = mode | ( b & 0xF0 ) | I2CLCD_BACKLIGHT_ON;
+    uint8_t nibble_low = mode | ( ( b<<4 ) & 0xF0 ) | I2CLCD_BACKLIGHT_ON;
+
+ /*   
     // High bits
-    //
-    if ( 0 != i2cWriteByte( h, byte_high ) ) return -1;
-    i2clcd_toggle_enable( h, byte_high );
+    if ( 0 != i2cWriteByte( h, nibble_high ) ) return -1;
+    i2clcd_toggle_enable( h, nibble_high );
 
     //  Low bits
-    if ( 0 != i2cWriteByte( h, byte_low ) ) return -1 ;
-    i2clcd_toggle_enable( h, byte_low );
+    if ( 0 != i2cWriteByte( h, nibble_low ) ) return -1 ;
+    i2clcd_toggle_enable( h, nibble_low );
+*/
+    buf[0] = nibble_high | I2CLCD_ENABLE;
+    buf[1] = nibble_high & ~I2CLCD_ENABLE;
+    buf[2] = nibble_low | I2CLCD_ENABLE;
+    buf[3] = nibble_low & ~I2CLCD_ENABLE;
+
+    i2cWriteDevice( h, (char *)buf, 4 );
 
     return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//
+// i2clcd_init
 //
 
-int i2clcd_open( int bus, int addr )
+unsigned i2clcd_init( int bus, int addr )
 {
     unsigned h;
 
+    if ( PI_INIT_FAILED == gpioInitialise() ) {
+    	return -1;
+    }
+    
     if ( ( h = i2cOpen( bus, addr, 0 ) ) < 0 ) {
     	return -1;
     }
@@ -72,22 +86,24 @@ int i2clcd_open( int bus, int addr )
 
 
 ///////////////////////////////////////////////////////////////////////////////
-//
+// i2clcd_close
 //
 
 int i2clcd_close( unsigned h ) 
 {
-    return i2cClose( h );
+    int rv = i2cClose( h );
+    gpioTerminate();
+    return rv;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-//
+// i2clcd_string
 //
 // Send string to display
 //
 
-int lcd_string( unsigned h, char *str, uint8_t line, uint8_t width )
+int i2clcd_string( unsigned h, char *str, uint8_t line, uint8_t width )
 {
    int i; 
    char buf[128];
@@ -103,8 +119,9 @@ int lcd_string( unsigned h, char *str, uint8_t line, uint8_t width )
 
     // Write string
     for ( i=0; i<strlen( buf ); i++ ) {
-    	i2clcd_write_byte( h, buf[i], I2CLCD_CMD );
+    	i2clcd_write_byte( h, buf[i], I2CLCD_CHR );
     }
 
     return 0;
  }
+
