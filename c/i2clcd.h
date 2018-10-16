@@ -73,10 +73,20 @@ Flags for display on/off control
 #define I2CLCD_E_PULSE		500	// 500 us
 #define I2CLCD_E_DELAY		500	// 500 us
 
-int i2clcd_toggle_enable( unsigned h, uint8_t byte );
-int i2clcd_write_byte( unsigned h, uint8_t b, uint8_t mode );
-unsigned i2clcd_init( int bus, int addr );
-int i2clcd_close( unsigned h ); 
-int i2clcd_string( unsigned h, char *str, uint8_t line, uint8_t width );
+
+typedef struct i2clcd {
+    uint8_t m_bus;
+    uint8_t m_addr;
+    uint8_t m_width;
+    uint8_t m_bBackLight;
+    unsigned m_spihandle;
+    unsigned m_pihandle;
+} i2clcd_t;
+
+
+int i2clcd_write_byte( i2clcd_t *pSession, uint8_t b, uint8_t mode );
+i2clcd_t *i2clcd_init( int bus, int addr, int width );
+int i2clcd_close( i2clcd_t *pSession ); 
+int i2clcd_string( i2clcd_t *pSession, char *str, uint8_t line, uint8_t width );
 
 

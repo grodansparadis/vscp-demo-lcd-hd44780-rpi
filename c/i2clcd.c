@@ -1,24 +1,16 @@
 #include <unistd.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include "pigpio.h"
+
+#ifdef USE_PIGPIOD
+#include <pigpiod_if2.h>
+#else
+#include <pigpio.h>
+#endif
 
 #include "i2clcd.h"
 
-///////////////////////////////////////////////////////////////////////////////
-// i2clcd_toggle_enable
-// 
-
-int i2clcd_toggle_enable( unsigned h, uint8_t byte )
-{
-    usleep( I2CLCD_E_DELAY );
-    i2cWriteByte( h, ( byte | I2CLCD_ENABLE ) );
-    usleep( I2CLCD_E_PULSE );
-    i2cWriteByte( h, ( byte & ~I2CLCD_ENABLE ) );
-    usleep( I2CLCD_E_DELAY );
-
-    return 0;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // i2clcd_write_byte
@@ -30,58 +22,67 @@ int i2clcd_toggle_enable( unsigned h, uint8_t byte )
 // 	  0 for command
 //
 
-int i2clcd_write_byte( unsigned h, uint8_t b, uint8_t mode )
+int i2clcd_write_byte( i2clcd_t *pSession, uint8_t b, uint8_t mode )
 {
     uint8_t buf[4];
 
     uint8_t nibble_high = mode | ( b & 0xF0 ) | I2CLCD_BACKLIGHT_ON;
     uint8_t nibble_low = mode | ( ( b<<4 ) & 0xF0 ) | I2CLCD_BACKLIGHT_ON;
 
- /*   
-    // High bits
-    if ( 0 != i2cWriteByte( h, nibble_high ) ) return -1;
-    i2clcd_toggle_enable( h, nibble_high );
-
-    //  Low bits
-    if ( 0 != i2cWriteByte( h, nibble_low ) ) return -1 ;
-    i2clcd_toggle_enable( h, nibble_low );
-*/
     buf[0] = nibble_high | I2CLCD_ENABLE;
     buf[1] = nibble_high & ~I2CLCD_ENABLE;
     buf[2] = nibble_low | I2CLCD_ENABLE;
     buf[3] = nibble_low & ~I2CLCD_ENABLE;
 
-    i2cWriteDevice( h, (char *)buf, 4 );
+    i2cWriteDevice( pSession->m_spihandle, (char *)buf, 4 );
 
     return 0;
 }
-
+/*
+struct i2clcd {
+    uint8_t m_bus;
+    uint8_t m_addr;
+    uint8_t m_width;
+    uint8_t m_bBackLight;
+    unsigned spihandle;
+    unsigned pihandle;
+} i2clcd_t;
+*/
 ///////////////////////////////////////////////////////////////////////////////
 // i2clcd_init
 //
 
-unsigned i2clcd_init( int bus, int addr )
+i2clcd_t *i2clcd_init( int bus, int addr, int width  )
 {
     unsigned h;
+    i2clcd_t *pSession;
 
     if ( PI_INIT_FAILED == gpioInitialise() ) {
-    	return -1;
+    	return NULL;
     }
     
     if ( ( h = i2cOpen( bus, addr, 0 ) ) < 0 ) {
-    	return -1;
+    	return NULL;
     }
 
-    i2clcd_write_byte( h, 0x33, I2CLCD_CMD ); // 110011 Initialise
-    i2clcd_write_byte( h, 0x32, I2CLCD_CMD ); // 110010 Initialise 
-    i2clcd_write_byte( h, 0x06, I2CLCD_CMD ); // 000110 Cursor move direction
-    i2clcd_write_byte( h, 0x0c, I2CLCD_CMD ); // 001100 Display on, Cursor off, Blink off
-    i2clcd_write_byte( h, 0x28, I2CLCD_CMD ); // 101000 Data length, number of lines, font size
-    i2clcd_write_byte( h, 0x01, I2CLCD_CMD ); // 000001 Clear display
+    pSession = (i2clcd_t *)malloc( sizeof( struct i2clcd ) );
+    if ( NULL == pSession ) return NULL;
 
-    usleep( I2CLCD_E_DELAY );
+    pSession->m_spihandle = h;
+    pSession->m_bus = bus;
+    pSession->m_addr = addr;
+    pSession->m_width = width;
 
-    return h;
+    i2clcd_write_byte( pSession, 0x33, I2CLCD_CMD ); // 110011 Initialise
+    i2clcd_write_byte( pSession, 0x32, I2CLCD_CMD ); // 110010 Initialise 
+    i2clcd_write_byte( pSession, 0x06, I2CLCD_CMD ); // 000110 Cursor move direction
+    i2clcd_write_byte( pSession, 0x0c, I2CLCD_CMD ); // 001100 Display on, Cursor off, Blink off
+    i2clcd_write_byte( pSession, 0x28, I2CLCD_CMD ); // 101000 Data length, number of lines, font size
+    i2clcd_write_byte( pSession, 0x01, I2CLCD_CMD ); // 000001 Clear display
+
+    usleep( I2CLCD_E_PULSE );
+
+    return pSession;
 }
 
 
@@ -89,13 +90,15 @@ unsigned i2clcd_init( int bus, int addr )
 // i2clcd_close
 //
 
-int i2clcd_close( unsigned h ) 
+int i2clcd_close( i2clcd_t *pSession  ) 
 {
-    int rv = i2cClose( h );
+    int rv = i2cClose( pSession->m_spihandle );
     gpioTerminate();
+
+    free( pSession );
+
     return rv;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // i2clcd_string
@@ -103,7 +106,7 @@ int i2clcd_close( unsigned h )
 // Send string to display
 //
 
-int i2clcd_string( unsigned h, char *str, uint8_t line, uint8_t width )
+int i2clcd_string( i2clcd_t *pSession, char *str, uint8_t line, uint8_t width )
 {
    int i; 
    char buf[128];
@@ -115,11 +118,11 @@ int i2clcd_string( unsigned h, char *str, uint8_t line, uint8_t width )
     }
 
     // Select line
-    i2clcd_write_byte( h, line, I2CLCD_CMD );
+    i2clcd_write_byte( pSession, line, I2CLCD_CMD );
 
     // Write string
     for ( i=0; i<strlen( buf ); i++ ) {
-    	i2clcd_write_byte( h, buf[i], I2CLCD_CHR );
+    	i2clcd_write_byte( pSession, buf[i], I2CLCD_CHR );
     }
 
     return 0;
