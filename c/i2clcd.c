@@ -76,7 +76,7 @@ i2clcd_t *i2clcd_init( int bus, int addr, int width  )
     i2clcd_write_byte( pSession, 0x33, I2CLCD_CMD ); // 110011 Initialise
     i2clcd_write_byte( pSession, 0x32, I2CLCD_CMD ); // 110010 Initialise 
     i2clcd_write_byte( pSession, 0x06, I2CLCD_CMD ); // 000110 Cursor move direction
-    i2clcd_write_byte( pSession, 0x0c, I2CLCD_CMD ); // 001100 Display on, Cursor off, Blink off
+    i2clcd_write_byte( pSession, 0x0C, I2CLCD_CMD ); // 001100 Display on, Cursor off, Blink off
     i2clcd_write_byte( pSession, 0x28, I2CLCD_CMD ); // 101000 Data length, number of lines, font size
     i2clcd_write_byte( pSession, 0x01, I2CLCD_CMD ); // 000001 Clear display
 
@@ -101,24 +101,46 @@ int i2clcd_close( i2clcd_t *pSession  )
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// i2clcd_string
+// i2clcd_string_row
 //
-// Send string to display
+// Replace a row (0 based) of the LCD with a new string.
 //
 
-int i2clcd_string( i2clcd_t *pSession, char *str, uint8_t line, uint8_t width )
+int i2clcd_string_row( i2clcd_t *pSession, char *str, uint8_t line  )
 {
    int i; 
    char buf[128];
 
     memset( buf, 0, sizeof( buf ) );
     strcpy( buf, str );		    
-    for ( i=strlen( buf); i<width; i++ ) {
+    for ( i=strlen( buf); i<pSession->m_width; i++ ) {
     	buf[i] =  0x20;
     }
 
-    // Select line
-    i2clcd_write_byte( pSession, line, I2CLCD_CMD );
+    switch ( line ) {
+
+	default:    
+    	case 0:
+	   // Select line 0
+           i2clcd_write_byte( pSession, I2CLCD_LINE_0, I2CLCD_CMD );
+	   break;
+	
+        case 1:
+           // Select line 1
+           i2clcd_write_byte( pSession,I2CLCD_LINE_1, I2CLCD_CMD );
+           break;
+
+        case 2:
+           // Select line 2
+           i2clcd_write_byte( pSession, I2CLCD_LINE_2, I2CLCD_CMD );
+           break;
+
+	case 3:
+           // Select line 3
+           i2clcd_write_byte( pSession, I2CLCD_LINE_3, I2CLCD_CMD );
+	   break;
+    }
+
 
     // Write string
     for ( i=0; i<strlen( buf ); i++ ) {
@@ -127,4 +149,82 @@ int i2clcd_string( i2clcd_t *pSession, char *str, uint8_t line, uint8_t width )
 
     return 0;
  }
+
+///////////////////////////////////////////////////////////////////////////////
+// i2clcd_string
+//
+// Write a string at the current cursor postion.  The cursor will
+// end up at the character after the end of the string.
+//
+
+int i2clcd_string( i2clcd_t *pSession, char *buf )
+{
+    // Write string
+    for ( int i=0; i<strlen( buf ); i++ ) {
+    	i2clcd_write_byte( pSession, buf[i], I2CLCD_CHR );
+    }
+
+    return 0;    
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// i2clcd_backlight
+//
+// set backlight on/off
+//
+
+void i2clcd_backlight( i2clcd_t *pSession, int bState )
+{
+    if ( bState ) {
+	pSession->m_bBackLight = 1;	    
+    }	    
+    else {
+    	pSession->m_bBackLight = 0;
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// i2clcd_moveto
+//
+// Move too new position
+//
+
+int i2clcd_moveto( i2clcd_t *pSession, int row, int column )
+{
+   switch ( row ) {
+
+       default:	   
+       case 0:
+	   i2clcd_write_byte( pSession, I2CLCD_LINE_0 + column, I2CLCD_CMD );
+           break;
+
+       case 1:
+           i2clcd_write_byte( pSession, I2CLCD_LINE_1 + column, I2CLCD_CMD );
+           break;
+
+       case 2:
+	   i2clcd_write_byte( pSession, I2CLCD_LINE_2 + column, I2CLCD_CMD );
+           break;
+
+       case 3:
+           i2clcd_write_byte( pSession, I2CLCD_LINE_3 + column, I2CLCD_CMD );
+           break;	   
+   }	  
+
+   return 0; 
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// i2clcd_put_char
+//
+// Put a symbol at the current cursor positionand then increment the cursor
+//
+
+int i2clcd_put_char( i2clcd_t *pSession, char c )
+{
+    i2clcd_write_byte( pSession, c, I2CLCD_CHR );
+    return 0;
+}
+
 
