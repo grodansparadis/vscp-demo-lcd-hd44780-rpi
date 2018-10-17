@@ -90,12 +90,16 @@ i2clcd_t *i2clcd_init( int bus, int addr, int width  )
 #endif   
 
     i2clcd_write_byte( pSession, 0x33, I2CLCD_CMD ); // 110011 Initialise
+    usleep( I2CLCD_E_PULSE );
     i2clcd_write_byte( pSession, 0x32, I2CLCD_CMD ); // 110010 Initialise 
+    usleep( I2CLCD_E_PULSE );
     i2clcd_write_byte( pSession, 0x06, I2CLCD_CMD ); // 000110 Cursor move direction
+    usleep( I2CLCD_E_PULSE );
     i2clcd_write_byte( pSession, 0x0C, I2CLCD_CMD ); // 001100 Display on, Cursor off, Blink off
+    usleep( I2CLCD_E_PULSE );
     i2clcd_write_byte( pSession, 0x28, I2CLCD_CMD ); // 101000 Data length, number of lines, font size
+    usleep( I2CLCD_E_PULSE );
     i2clcd_write_byte( pSession, 0x01, I2CLCD_CMD ); // 000001 Clear display
-
     usleep( I2CLCD_E_PULSE );
 
     return pSession;

@@ -1,44 +1,45 @@
 #include <stdint.h>
 
-/*
+
 // Flags for display entry mode
-I2CLCD_ENTRYRIGHT = 0x00
-LCD_ENTRYLEFT = 0x02
-LCD_ENTRYSHIFTINCREMENT = 0x01
-LCD_ENTRYSHIFTDECREMENT = 0x00
+#define I2CLCD_ENTRYRIGHT 		0x00
+#define I2CLCD_ENTRYLEFT		0x02
+#define I2CLCD_ENTRYSHIFTINCREMENT 	0x01
+#define I2CLCD_ENTRYSHIFTDECREMENT 	0x00
 
 // Flags for display on/off control
-LCD_DISPLAYON = 0x04
-LCD_DISPLAYOFF = 0x00
-LCD_CURSORON = 0x02
-LCD_CURSOROFF = 0x00
-LCD_BLINKON = 0x01
-LCD_BLINKOFF = 0x00
+#define I2CLCD_DISPLAYON 		0x04
+#define I2CLCD_DISPLAYOFF 		0x00
+#define I2CLCD_CURSORON 		0x02
+#define I2CLCD_CURSOROFF 		0x00
+#define I2CLCD_BLINKON 			0x01
+#define I2CLCD_BLINKOFF 		0x00
 
 // Flags for display/cursor shift
-LCD_DISPLAYMOVE = 0x08
-LCD_CURSORMOVE = 0x00
-LCD_MOVERIGHT = 0x04
-LCD_MOVELEFT = 0x00
+#define I2CLCD_DISPLAYMOVE 		0x08
+#define I2CLCD_CURSORMOVE 		0x00
+#define I2CLCD_MOVERIGHT 		0x04
+#define I2CLCD_MOVELEFT 		0x00
 
 // Flags for function set
-LCD_8BITMODE = 0x10
-LCD_4BITMODE = 0x00
-LCD_2LINE = 0x08
-LCD_1LINE = 0x00
-LCD_5x10DOTS = 0x04
-LCD_5x8DOTS = 0x00
+#define I2CLCD_8BITMODE 		0x10
+#define I2CLCD_4BITMODE 		0x00
+#define I2CLCD_2LINE 			0x08
+#define I2CLCD_1LINE 			0x00
+#define I2CLCD_5x10DOTS 		0x04
+#define I2CLCD_5x8DOTS 			0x00
 
 // Flags for backlight control
-LCD_BACKLIGHT = 0x08
-LCD_NOBACKLIGHT = 0x00
+#define I2CLCD_BACKLIGHT 		0x08
+#define I2CLCD_NOBACKLIGHT 		0x00
 
-*/				       
+				       
 
 /*
- *  http://www.dinceraydin.com/lcd/index.html
- *  http://www.dinceraydin.com/lcd/commands.htm
+ * Good docs
  *
+ * http://www.dinceraydin.com/lcd/index.html
+ * http://www.dinceraydin.com/lcd/commands.htm
  *
  * */
 
@@ -67,12 +68,20 @@ LCD_NOBACKLIGHT = 0x00
 #define I2CLCD_E_DELAY		500	// 500 us
 
 // Commands
-#define I2CLCD_CMD_CLEARDISPLAY		0x01
-#define I2CLCD_CMD_RETURNHOME		0x02
-#define I2CLCD_CMD_ENTRYMODESET		0x04
-#define I2CLCD_CMD_DISPLAYCONTROL	0x08
-#define I2CLCD_CMD_CURSORSHIFT		0x10
-#define I2CLCD_CMD_FUNCTIONSET		0x20
+#define I2CLCD_CMD_CLEARDISPLAY		0x01	// Clear Screen
+#define I2CLCD_CMD_RETURNHOME		0x02	// Home (move cursor to top/left character
+#define I2CLCD_CMD_DISPLAYCONTROL	0x08	// Blank the display (without clearing)
+#define I2CLCD_CMD_CURSOR_INVISIBBLE	0x0C	// Make cursor invisible
+#define I2CLCD_CMD_CURSOR_UNDERLINE	0x0E	// Turn  on visible underline cursor 
+#define I2CLCD_CMD_BLINK_CURSOR_BLOCK	0x0F	// Turn on visible blinking-block cursor 
+#define I2CLCD_CMD_CURSORSHIFT		0x10	// Move cursor one character left
+#define I2CLCD_CMD_FUNCTIONSET		0x14	// Move cursor one character right
+#define I2CLCD_CMD_SCROLL_LEFT		0x18	// Scroll display one character left (all lines)
+#define I2CLCD_CMD_SCROLL_RIGHT		0x1E	// Scroll display one character right (all lines)
+#define I2CLCD_CMD_FUNC_4_1_5_7		0x20	// Function set (4-bit interface, 1 line, 5*7 Pixels) 
+#define I2CLCD_CMD_FUNC_4_2_5_7		0x28	// Function set (4-bit interface, 2 lines, 5*7 Pixels)
+#define I2CLCD_CMD_FUNC_8_1_5_7		0x30	// Function set (8-bit interface, 1 line, 5*7 Pixels)
+#define I2CLCD_CMD_FUNC_8_2_5_7		0x20	// Function set (8-bit interface, 2 lines, 5*7 Pixels)
 #define I2CLCD_CMD_SETCGRAMADDR		0x40
 #define I2CLCD_CMD_SETDDRAMADDR		0x80
 
