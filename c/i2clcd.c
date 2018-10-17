@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -34,20 +35,18 @@ int i2clcd_write_byte( i2clcd_t *pSession, uint8_t b, uint8_t mode )
     buf[2] = nibble_low | I2CLCD_ENABLE;
     buf[3] = nibble_low & ~I2CLCD_ENABLE;
 
+#ifdef USE_PIGPIOD
+    i2c_write_device( pSession->m_pi, 
+		    	pSession->m_spihandle, 
+			(char *)buf, 
+			4 );  
+#else   
     i2cWriteDevice( pSession->m_spihandle, (char *)buf, 4 );
+#endif    
 
     return 0;
 }
-/*
-struct i2clcd {
-    uint8_t m_bus;
-    uint8_t m_addr;
-    uint8_t m_width;
-    uint8_t m_bBackLight;
-    unsigned spihandle;
-    unsigned pihandle;
-} i2clcd_t;
-*/
+
 ///////////////////////////////////////////////////////////////////////////////
 // i2clcd_init
 //
@@ -57,6 +56,19 @@ i2clcd_t *i2clcd_init( int bus, int addr, int width  )
     unsigned h;
     i2clcd_t *pSession;
 
+#ifdef USE_PIGPIOD
+    int pi;
+
+    if ( ( pi = pigpio_start( "127.0.0.1", "8888") ) < 0 ) {
+	printf("xxxx\n");    
+    	return NULL;
+    }
+
+    if ( ( h = i2c_open( pi, bus, addr, 0 ) ) < 0 ) {
+	printf("yyyy\n");    
+    	return NULL;
+    } 
+#else   
     if ( PI_INIT_FAILED == gpioInitialise() ) {
     	return NULL;
     }
@@ -64,6 +76,7 @@ i2clcd_t *i2clcd_init( int bus, int addr, int width  )
     if ( ( h = i2cOpen( bus, addr, 0 ) ) < 0 ) {
     	return NULL;
     }
+#endif    
 
     pSession = (i2clcd_t *)malloc( sizeof( struct i2clcd ) );
     if ( NULL == pSession ) return NULL;
@@ -72,6 +85,9 @@ i2clcd_t *i2clcd_init( int bus, int addr, int width  )
     pSession->m_bus = bus;
     pSession->m_addr = addr;
     pSession->m_width = width;
+ #ifdef USE_PIGPIOD   
+    pSession->m_pi = pi;
+#endif   
 
     i2clcd_write_byte( pSession, 0x33, I2CLCD_CMD ); // 110011 Initialise
     i2clcd_write_byte( pSession, 0x32, I2CLCD_CMD ); // 110010 Initialise 
@@ -92,8 +108,14 @@ i2clcd_t *i2clcd_init( int bus, int addr, int width  )
 
 int i2clcd_close( i2clcd_t *pSession  ) 
 {
-    int rv = i2cClose( pSession->m_spihandle );
+    int rv;	
+#ifdef USE_PIGPIOD
+    rv = i2c_close( pSession->m_pi, pSession->m_spihandle );
+    pigpio_stop( pSession->m_pi );
+#else
+    rv = i2cClose( pSession->m_spihandle );
     gpioTerminate();
+#endif    
 
     free( pSession );
 

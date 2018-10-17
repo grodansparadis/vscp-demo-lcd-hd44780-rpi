@@ -58,7 +58,17 @@ int main( void )
 
     // Light underline cursor
     i2clcd_write_byte( pSession, 0x0E, I2CLCD_CMD );
-    sleep( 4 );
+    sleep( 1 );
+
+    // Move cursor right
+    i2clcd_write_byte( pSession, 0x14, I2CLCD_CMD );
+    sleep( 1 );
+    i2clcd_write_byte( pSession, 0x14, I2CLCD_CMD );
+    sleep( 1 );
+    i2clcd_write_byte( pSession, 0x14, I2CLCD_CMD );
+    sleep( 1 );
+    i2clcd_write_byte( pSession, 0x14, I2CLCD_CMD );
+    sleep( 1 );
 
     // Make cursor invisible
     i2clcd_write_byte( pSession, 0x0C, I2CLCD_CMD );

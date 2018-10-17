@@ -83,7 +83,7 @@ typedef struct i2clcd {
     uint8_t m_width;
     uint8_t m_bBackLight;
     unsigned m_spihandle;
-    unsigned m_pihandle;
+    unsigned m_pi;
 } i2clcd_t;
 
 
