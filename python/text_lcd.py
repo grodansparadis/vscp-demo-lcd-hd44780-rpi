@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 # _____ _____ _____ __ __ _____ _____ 
 #|     |   __|     |  |  |     |     |
 #|  |  |__   |  |  |_   _|  |  |  |  |
@@ -84,7 +86,7 @@ def lcd_string(message,line):
 def main():
 
   line_ram = LCD_LINE_1
-  line = int(sys.argv[2])
+  line = int(sys.argv[1])
 
   if line == 0:
       line_ram = LCD_LINE_1
@@ -97,10 +99,10 @@ def main():
 
   # Initialise display
 #  lcd_init()
-  print(int(sys.argv[2]))
+  print(int(sys.argv[1]))
 
   # Send some test
-  lcd_string( sys.argv[1], line_ram )
+  lcd_string( sys.argv[2], line_ram )
 
 main();
 
